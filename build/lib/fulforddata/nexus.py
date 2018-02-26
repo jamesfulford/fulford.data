@@ -1,68 +1,11 @@
-import logging
-from accessors import *
-from validators import *
-from tools import flatten_list, check, partition
 
-from tools import ITERABLES
-from tools import DICTIONARIES
-from tools import STRINGS
+from fulforddata.utilities.tools import flatten_list, partition
 
-logger = logging.getLogger(__name__)
+from fulforddata.access import retrieve
+from fulforddata.access.accessors import *
 
-
-def _retrieve(data, form, *args):
-    """
-    Using accessors specified in form,
-    retrieves all values from dictionary 'data'.
-    form = {
-        "value": accessor_function,
-    }
-
-    If accessor is a dict, recurses.
-    If accessor is a str/unicode, splits on "/"
-
-    Returns dictionary if succeeded. If accessor raises Exception,
-    will return None (should be filtered out)
-    and prints and logs a message about that entry.
-    """
-    entry = {}
-    for tupl in form.items():
-        key, accessor = tuple(tupl)  # just in case it's a list
-
-        #
-        # if accessor is a dict, recurse
-        #
-        if isinstance(accessor, DICTIONARIES):
-            entry[key] = _retrieve(data, accessor, *args)
-            if entry[key] is None:  # retrieve failed
-                return None  # filter it out
-        #
-        # else, access the value
-        #
-        else:
-            #
-            # if value is a string, use standard accessor with / as lister
-            #
-            if isinstance(accessor, STRINGS):
-                accessor = access(accessor.split("/"))
-
-            #
-            # try to access the value from the data
-            #
-            try:
-                entry[key] = accessor(data, *args)
-            except Exception as e:
-                #
-                # accessing failed. Log message
-                # and return None so it gets filtered out.
-                #
-                msg = "({}, {}): {}\nSkipping {}.".format(
-                    *(key, accessor.__name__, str(e), data)
-                )
-                logger.debug(msg)
-                print msg
-                return None
-    return entry
+from fulforddata.validate import check
+from fulforddata.validate.validators import *
 
 
 class Nexus(object):
@@ -72,9 +15,10 @@ class Nexus(object):
         self.rejects = []  # all entries that fail validation
         self.packed = []  # all entries that failed unpacking
 
-    def add(self, entries, unpackers, *args):
+    def add(self, unpackers, *args):
         """
-        Adds valid entries in given format to self.entries
+        Adds valid entries (passed later) in format given by unpackers
+            to self.entries.
         Invalid entries added to self.rejects
         Un-unpackable entries added to self.packed
 
@@ -82,26 +26,29 @@ class Nexus(object):
         """
 
         def transform(entry):
-            return _retrieve(entry, unpackers, *args)
+            return retrieve(entry, unpackers, *args)
 
-        results = map(transform, entries)  # unpack
+        def adder(entries):
+            results = map(transform, entries)  # unpack
 
-        #
-        # Validate
-        #
-        parting = partition(lambda e: check(e, self.template) if e else e,
-                            results)
+            #
+            # Validate
+            #
+            parting = partition(lambda e: check(e, self.template) if e else e,
+                                results)
 
-        # Store results
-        self.entries.extend(  # successful mappings and valid
-            parting.get(True, [])
-        )
-        self.rejects.extend(  # successful mappings and invalid
-            parting.get(False, [])
-        )
-        self.packed.extend(  # unsuccessful mappings
-            parting.get(None, [])
-        )
+            # Store results
+            self.entries.extend(  # successful mappings and valid
+                parting.get(True, [])
+            )
+            self.rejects.extend(  # successful mappings and invalid
+                parting.get(False, [])
+            )
+            self.packed.extend(  # unsuccessful mappings
+                parting.get(None, [])
+            )
+
+        return adder
 
     def get_rows(self, columns, fill="", *args):
         """
@@ -122,7 +69,7 @@ class Nexus(object):
             {0: 2.33, 2: 3.14}
             Returns None if an accessor raised Exception.
             """
-            return _retrieve(entry, columns, *args)
+            return retrieve(entry, columns, *args)
 
         def make_row(ent, fill=fill):
             """
@@ -156,7 +103,7 @@ class Nexus(object):
         }
         """
         def transform(entry):
-            return _retrieve(entry, form, *args)
+            return retrieve(entry, form, *args)
 
         return filter(lambda r: r, map(transform, self.entries))
 
@@ -192,8 +139,19 @@ class Nexus(object):
         will apply each leaf function on each entry in self.entries.
         """
 
-        parting = partition(lambda e: check(e, template, **contexts),
-                            self.entries)
+        final_context = {
+            "entries": self.entries
+        }
+        final_context.update(contexts)
+
+        parting = partition(
+            lambda e: check(
+                e,
+                template,
+                **final_context
+            ),
+            self.entries
+        )
 
         #
         # Replace entries with valid entries
@@ -235,20 +193,22 @@ if __name__ == "__main__":
     unpackers = {
         "id": access(["james", "id"]),
         "x_coord": try_deeper_key("x", "extra_data", default=0),
-        "y_coord": access(["y"], 0)
+        "y_coord": access(["y"], 0),
+        "square_id": access("james/id", mapping=lambda x: x ** 2)
     }
 
     declaration = {
         "id": be_an(int),
         "x_coord": be_an(int),
-        "y_coord": be_an(int)
+        "y_coord": be_an(int),
+        "square_id": be_good(lambda x: int(x ** .5) - (x ** .5) < 0.001)
     }
 
-    print unpackers
+    print "Unpackers: {}\n".format(unpackers)
     n = Nexus(declaration)
 
-    n.add(entries, unpackers)
-    n.validate({"id": be_unique("id")}, entries=n.entries)
+    n.add(unpackers)(entries)
+    n.validate({"id": be_unique("id")})
     print "Entries", len(n.entries)
     print "Rejects", len(n.rejects)
     print "Packed ", len(n.packed)

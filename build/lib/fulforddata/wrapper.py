@@ -1,8 +1,9 @@
 # wrapper.py
 # by James Fulford
 
-from accessors import access
-from tools import ITERABLES, DICTIONARIES
+from fulforddata import constants as c
+
+from fulforddata.access.accessors import access
 
 
 class Wrapper(object):
@@ -42,10 +43,10 @@ class Wrapper(object):
             raise AttributeError("Cannot access {}".format(name))
 
     def __getitem__(self, name):
-        result = access(name)(self.__data)
-        if (isinstance(result, ITERABLES) or
-                isinstance(result, DICTIONARIES)):
-            return Wrapper(result)
+        result = access(name, split=self.__splitter)(self.__data)
+        if (isinstance(result, c.ITERABLES) or
+                isinstance(result, c.DICTIONARIES)):
+            return Wrapper(result, splitter=self.__splitter)
         return result
 
     def __str__(self):
@@ -58,5 +59,11 @@ class Wrapper(object):
 
 
 if __name__ == "__main__":
-    james = Wrapper({"help": {"text": "Eat something tasty"}})
-    print james.get_help__text()
+    james = Wrapper(
+        {"help": {"text": "Eat something tasty"}},
+        splitter="_0_"
+    )
+    print james.get_help_0_text()
+    print james[["help", "text"]]
+    print james["help_0_text"]
+    print james["help"].get_text()
