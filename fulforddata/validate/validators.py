@@ -6,9 +6,10 @@
 # -James Fulford
 #
 
-from accessors import access
-from tools import ITERABLES
-from tools import ReadableFunction as validator
+
+from fulforddata import constants as c
+from fulforddata.access.accessors import access
+from fulforddata.utilities.functional import ReadableFunction as validator
 
 #
 # CONTEXT DEFINITIONS
@@ -86,23 +87,15 @@ def at_least(*args):
 
 @validator
 def case(*args):
-    #
-    # TODO: Make it like at_least, but on an XOR basis
-    # (ONE AND ONLY ONE SUCCEEDS)
-    #
     pass
 
 
 def _parse_tests(args, top_is_and=True):
-    #
-    # TODO: Be able to specify number of successes needed
-    # i.e. need at least 2 tests to pass in order for this to pass
-    #
 
     def check_that(data, **context):
 
         def check_and(arg, depth=0):
-            if isinstance(arg, ITERABLES):
+            if isinstance(arg, c.ITERABLES):
                 # print ("    " * depth) + "AND({})".format(arg)
                 for a in arg:
                     #
@@ -117,7 +110,7 @@ def _parse_tests(args, top_is_and=True):
                 return arg(data, **context)
 
         def check_or(arg, depth=0):
-            if isinstance(arg, ITERABLES):
+            if isinstance(arg, c.ITERABLES):
                 # print ("    " * depth) + "OR({})".format(arg)
                 for a in arg:
                     #
@@ -204,20 +197,7 @@ def have(key, *tests):
 
 
 #
-# First Contextual Validators
-#
-
-#
-# TODO: Add 'entry' context validators
-#
-
-
-#
 # 'entries' Contextual Validators
-#
-
-#
-# TODO: convert these to second context validators
 #
 
 @validator
@@ -238,7 +218,7 @@ def _reference(key, min_finds, max_finds=None, flatten=True):
         finds = 0
         for item in entries:
             acc = access(key, flatten=flatten)(item)
-            if isinstance(acc, ITERABLES):
+            if isinstance(acc, c.ITERABLES):
                 result = data in acc
             else:
                 result = data == acc
@@ -276,9 +256,6 @@ def point_to(key):
 # Third Context Validators
 #
 
-#
-# TODO: Specify test(s) to run on foreign referred item
-#
 @validator
 def foreign(nexi_name, key, *tests):
     """

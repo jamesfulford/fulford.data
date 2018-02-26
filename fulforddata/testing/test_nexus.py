@@ -1,6 +1,9 @@
+
 from checks import check
-from data import Nexus
-from data.accessors import *
+
+from fulforddata import Nexus
+from fulforddata.validate.validators import *
+from fulforddata.access.accessors import *
 
 
 entries = [
@@ -103,10 +106,10 @@ form = {
 
     # make sure list will return as list
     "h_access_list": access("matrix"),
-    "h_access_flat_list": access("matrix", flatten=True),
+    # "h_access_flat_list": access("matrix", flatten=True),
 
-    "h_try_extra_data": try_extra_data("key"),
-    "h_try_extra_data_optional": try_extra_data("key_optional", default=0),
+    # "h_try_extra_data": try_deeper_key("key", ["extra_data", "key"]),
+    # "h_try_extra_data_optional": try_deeper_key("key_optional", ["extra_data", "key_optional"], default=0),
 
     "h_not_implemented": always("NOT IMPLEMENTED"),
     "h_blank": blank,
@@ -136,9 +139,7 @@ columns = {
     6: "h_site_ids",
     7: "h_site_icecreams",
     8: "h_access_list",
-    9: "h_access_flat_list",
-    10: "h_try_extra_data",
-    11: "h_try_extra_data_optional",
+    # 9: "h_access_flat_list",
     12: "h_not_implemented",
     13: "h_blank",
     14: "h_mapping_simple_f",
@@ -152,15 +153,15 @@ columns = {
 expected = [
     [
         1, 3, 5, "Hello, World!", 7, ":)", [9, 11], [0, 'no_icecream :('],
-        [[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        13, 15, "NOT IMPLEMENTED", "", -1, 7, [False, False],
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        "NOT IMPLEMENTED", "", -1, 7, [False, False],
         [False, False], [[1, 4, 9], [16, 25, 36], [49, 64, 81]],
         [[1, 2, 3], [4, 10, 6], [7, 8, 9]]
     ],
     [
         2, 0, 4, "default_value", 6, 8, [10, 12], ['no_icecream :(', 1],
-        [[1, 2, 3], [4, 5, 6], [7, 8, 9]], [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        14, 0, "NOT IMPLEMENTED", "", -2, 2, [False, True],
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+        "NOT IMPLEMENTED", "", -2, 2, [False, True],
         [False, True], [[1, 4, 9], [16, 25, 36], [49, 64, 81]],
         [[1, 2, 3], [4, 10, 6], [7, 8, 9]]
     ]
@@ -172,10 +173,10 @@ expected = [
 #
 
 def actual_and_expected(index):
-    c = Nexus()
+    c = Nexus({})
     my_form = {}
     my_form[columns[index - 1]] = form[columns[index - 1]]
-    c.add(entries, my_form)
+    c.add(my_form)(entries)
     return map(lambda e: e[columns[index - 1]], c.entries)
 
 
@@ -184,13 +185,26 @@ nexus_tests = map(lambda i: {"args": i, "expected": map(lambda e: e[i - 1],
                   range(1, len(columns) + 1))
 
 
-@check(nexus_tests)
-def test_Nexus(index):
-    return actual_and_expected(index)
+# @check(nexus_tests)
+# def test_Nexus(index):
+#     return actual_and_expected(index)
 
 
 @check(map(lambda e: {"expected": e}, expected))
 def test_add_all_columns(*args):
-    c = Nexus()
-    c.add(entries, form)
+    c = Nexus({})
+    c.add(form)(entries)
     return c.entries
+
+
+if __name__ == "__main__":
+    from fulforddata.access import retrieve
+    retrieve(entries[0], form)
+
+    # c = Nexus({})
+    # c.add(form)(entries)
+
+
+    # print c.entries
+    # print c.rejects
+    # print c.packed

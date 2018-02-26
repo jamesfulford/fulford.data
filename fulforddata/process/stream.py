@@ -7,12 +7,6 @@ from copy import deepcopy
 import workers
 
 
-#
-# TODO: Use "from Queue import Queue" instead of Trickle...
-# TODO: Make some generic Workers (sqlalchemy, requestsRESTAPI)
-# TODO: Make a function that mutates object in any order (parallel_compose)
-#
-
 class Trickle(object):
 
     def __init__(self, work):

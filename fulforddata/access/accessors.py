@@ -1,7 +1,31 @@
-from tools import flatten_list, pass_through, resolve_keypath
-from tools import ReadableFunction as accessor
-from tools import DICTIONARIES
-from tools import ITERABLES
+from fulforddata import constants as c
+from fulforddata.utilities.tools import flatten_list
+
+from fulforddata.utilities.functional import pass_through
+from fulforddata.utilities.functional import ReadableFunction as accessor
+
+
+def resolve_keypath(keypath, split="/"):
+    """
+    Converts keypath into a list of keys to pass through.
+    If keypath is a string, makes list by splitting on split
+
+    >>> resolve_keypath(["a", "b"])
+    ["a", "b"]
+
+    >>> resolve_keypath("a/b")
+    ["a", "b"]
+
+    >>> resolve_keypath("a_b", split="_")
+    ["a", "b"]
+
+    """
+    if isinstance(keypath, c.STRINGS):
+        if split:
+            keypath = keypath.split(split)
+        else:
+            keypath = [keypath]
+    return keypath
 
 
 @accessor
@@ -38,10 +62,10 @@ def access(key, default=None, flatten=None,
         If data is a list, gets k from each item in the list.
         If default is set, returns default value on fail
         """
-        if isinstance(data, ITERABLES):
+        if isinstance(data, c.ITERABLES):
             get_deeper.non_data_lists += 1  # set before calling
             return map(lambda dp: get_deeper(k, dp, leaf=leaf), data)
-        elif isinstance(data, DICTIONARIES):
+        elif isinstance(data, c.DICTIONARIES):
             try:
                 return data[k]
             except Exception:
@@ -65,7 +89,7 @@ def access(key, default=None, flatten=None,
             data = get_deeper(k, data, leaf=(i == len(key) - 1))
 
         # now getting ready to return data
-        if isinstance(data, ITERABLES):
+        if isinstance(data, c.ITERABLES):
             data = flatten_list(data, depth=get_deeper.non_data_lists - 2)
             if flatten:
                 data = map(lambda d: flatten_list(d, depth=flatten), data)

@@ -9,7 +9,6 @@ from multiprocessing.pool import ThreadPool
 MSG = "\n\t{1.__class__.__name__}: {1.message} raised by {0.__name__} on {2}\n"
 
 
-
 class Worker(object):
     """
     Wraps function which does work. When called, uses wrapped function on each
