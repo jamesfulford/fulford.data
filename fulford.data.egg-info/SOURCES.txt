@@ -1,0 +1,11 @@
+fulford.data.egg-info/PKG-INFO
+fulford.data.egg-info/SOURCES.txt
+fulford.data.egg-info/dependency_links.txt
+fulford.data.egg-info/top_level.txt
+fulforddata/__init__.py
+fulforddata/accessors.py
+fulforddata/composition.py
+fulforddata/nexus.py
+fulforddata/tools.py
+fulforddata/validators.py
+fulforddata/wrapper.py
