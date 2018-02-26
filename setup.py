@@ -8,6 +8,7 @@ kwargs = {
     "author": "James Patrick Fulford",
     "author_email": "james.patrick.fulford@gmail.com",
     "url": "https://github.com/jamesfulford/fulford.data",
+    "license": "Apache-2.0",
 
     "version": "0.1.0",
 
