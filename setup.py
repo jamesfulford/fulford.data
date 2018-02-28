@@ -1,4 +1,6 @@
 from distutils.core import setup
+from setuptools import find_packages
+
 
 desc = "Declarative processing, transforming, and validating of data."
 
@@ -10,9 +12,10 @@ kwargs = {
     "url": "https://github.com/jamesfulford/fulford.data",
     "license": "Apache-2.0",
 
-    "version": "1.0.1",
+    "version": "1.0.2",
 
-    "packages": ["fulforddata"],
+    "packages": find_packages("fulforddata"),
+    "package_dir": {'': 'fulforddata'}
 }
 
 setup(
