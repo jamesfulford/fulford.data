@@ -12,12 +12,14 @@ kwargs = {
     "url": "https://github.com/jamesfulford/fulford.data",
     "license": "Apache-2.0",
 
-    "version": "1.0.2",
+    "version": "1.0.3",
 
-    "packages": find_packages("fulforddata"),
-    "package_dir": {'': 'fulforddata'}
+    "packages": find_packages()
 }
 
-setup(
-    **kwargs
-)
+if __name__ == "__main__":
+    print find_packages()
+else:
+    setup(
+        **kwargs
+    )
