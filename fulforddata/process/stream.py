@@ -8,10 +8,19 @@ import workers
 
 
 class Trickle(object):
+    """
+    A iterable object which acts as a buffer between processing stations
+        in a Stream. Can only be iterated over once.
+
+    Difference between Trickle and a Queue is that Trickle.nomore is a flag to
+        set which indicates that nothing else is coming, allowing the iterating
+        code to distinguish between a build-up of work earlier in the process
+        and between having no work at all left.
+    """
 
     def __init__(self, work):
         self.work = work
-        self.i = 0
+        self.i = 0  # note: can only iterate over once
         self.nomore = False
 
     def __iter__(self):
@@ -31,23 +40,40 @@ class Trickle(object):
     def extend(self, items):
         self.work.extend(items)
 
-    def next(self):
+    def get_next_if_any(self):
+        """
+        Returns the next item in the queue, if there is one queued.
+            If nothing is waiting in queue, return None
+        """
         try:
             ret = self.work[deepcopy(self.i)]
             self.i += 1
-            return ret if ret is not None else self.next()
-        except KeyError:
-            # print "{} out of work. Nomore: {}".format(self.i, self.nomore)
-            if self.nomore:
-                raise StopIteration()
-            time.sleep(0.05)
-            return self.next()  # TODO: make iterative; limit depth
-        except IndexError:
-            # print "{} out of work. Nomore: {}".format(self.i, self.nomore)
-            if self.nomore:
-                raise StopIteration()
-            time.sleep(0.05)
-            return self.next()  # TODO: make iterative; limit depth
+            # print "Trickling item", self.i
+            return ret
+        except Exception:
+            return None
+
+    def next(self):
+        """
+        Called when iterating over this object.
+
+        Waits for an item to be added to work list.
+
+        If told no new items will be added and the work list has been
+            exhausted, then will stop waiting for new items and will raise
+            a StopIteration.
+        """
+        while True:  # waiting
+            item = self.get_next_if_any()
+            if item is not None:  # feature: value None is filtered out
+                return item
+
+            if self.nomore:  # if nothing else is coming
+                break  # stop waiting
+
+            time.sleep(0.1)  # wait before checking again
+
+        raise StopIteration()  # tell next worker nothing else is coming
 
 
 class Stream(object):
@@ -127,18 +153,24 @@ class Stream(object):
     def __call__(self, work):
         work = deepcopy(work)  # in case initial input is important
 
+        # represents where each piece of work is in the process
+        # first list being not done yet, last list being finished
         work_queues = [work] + [[] for w in self._workers]
         work_queues = map(Trickle, work_queues)
         work_queues[0].nomore = True  # no more input in Tricker 0
 
         # print "Before: {}".format(work_queues)
 
+        # prepares all workers in stream by putting on separate threads
         tapestry = [threading.Thread(**{
             "target": self._workers[i],
             "args": (work_queues[i], work_queues[i + 1], self.errors)
         }) for i in range(len(self._workers))]  # prepare worker threads
+
+        # start worker threads
         [t.start() for t in tapestry]  # start worker threads
 
+        # return a reference to a Trickler of finished items
         return work_queues[-1]
         # [t.join() for t in tapestry]  # wait for all threads to finish
 
@@ -160,7 +192,7 @@ if __name__ == "__main__":
         return d
 
     def tee(d):
-        print d
+        time.sleep(d)
         return d
 
     #
@@ -168,13 +200,11 @@ if __name__ == "__main__":
     #
 
     mystream = Stream(quiet=False).then([
-        lambda x: {"value": x},
-        workers.IOWorker(wait),
         tee,
     ])
 
-    results = mystream([2, 3, 0, 1, 7])
-    results.extend(mystream([4, 4, 9]))
+    results = mystream([0, 1])
+    # results.extend(mystream([4, 4, 9]))
     for i in results:
         print "Done:", i
 
