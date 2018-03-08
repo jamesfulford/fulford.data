@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: fulford.data
-Version: 1.0.0
+Version: 1.0.3
 Summary: Declarative processing, transforming, and validating of data.
 Home-page: https://github.com/jamesfulford/fulford.data
 Author: James Patrick Fulford

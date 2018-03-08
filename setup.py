@@ -17,9 +17,6 @@ kwargs = {
     "packages": find_packages()
 }
 
-if __name__ == "__main__":
-    print find_packages()
-else:
-    setup(
-        **kwargs
-    )
+setup(
+    **kwargs
+)

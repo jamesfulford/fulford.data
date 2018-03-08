@@ -1,4 +1,5 @@
 README.rst
+setup.py
 fulford.data.egg-info/PKG-INFO
 fulford.data.egg-info/SOURCES.txt
 fulford.data.egg-info/dependency_links.txt
@@ -7,3 +8,14 @@ fulforddata/__init__.py
 fulforddata/constants.py
 fulforddata/nexus.py
 fulforddata/wrapper.py
+fulforddata/access/__init__.py
+fulforddata/access/accessors.py
+fulforddata/process/__init__.py
+fulforddata/process/fork.py
+fulforddata/process/stream.py
+fulforddata/process/workers.py
+fulforddata/utilities/__init__.py
+fulforddata/utilities/functional.py
+fulforddata/utilities/tools.py
+fulforddata/validate/__init__.py
+fulforddata/validate/validators.py
