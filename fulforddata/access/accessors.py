@@ -1,3 +1,5 @@
+import functools
+
 from fulforddata import constants as c
 from fulforddata.utilities.tools import flatten_list
 
@@ -73,7 +75,8 @@ def access(key, default=None, flatten=None,
                     return default
                 else:
                     raise  # TypeError or KeyError
-
+    
+    # @functools.wraps
     def get_deep_key_from_dictionary(data, *args):
         """
         Gets deep key from data. Ignores resource.
@@ -133,3 +136,9 @@ def always(value):
 
 blank = always("")
 blank.__doc__ = "Always returns the empty string (\"\")."
+
+
+if __name__ == "__main__":
+    print access("x")({"x": 2})
+    print access.__name__
+    print access.__doc__

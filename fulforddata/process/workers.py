@@ -1,10 +1,14 @@
 # workers.py
 
 import requests
+import logging
+import functools
 
 from multiprocessing import Pool as ProcessPool
 from multiprocessing.pool import ThreadPool
 
+default_logger = logging.getLogger(__name__)
+default_logger.addHandler(logging.NullHandler())
 
 MSG = "\n\t{1.__class__.__name__}: {1.message} raised by {0.__name__} on {2}\n"
 
@@ -17,34 +21,31 @@ class Worker(object):
     If wrapped function raises an exception, that item is excluded from output
         and the item is collected in error_buffer under self.error_key
         and the exception is collected under self.error_key + "_exception".
-
-    If quiet flag is False, raised exceptions will throw an exception.
+        It is also logged to given logger as an exception.
 
     When done ALL work, sets output_list.nomore to True.
 
-    recip = Worker(lambda x: 1.0 / x)
-    work, output, error = [2, 1, 0], [], {}
-    recip(work, output, error)
-
-    # wait a bit
-
+    >>> recip = Worker(lambda x: 1.0 / x)
+    >>> work, output, error = [2, 1, 0], [], {}
+    >>> recip(work, output, error)
     >>> output
     [.5, 1.0]
+    # NOTE: work item #3, which was 0, raised an error
     """
     PRESERVES_ORDER = True
     UNPACK = False
     INSTANCES = 1
-    QUIET = True
 
-    def __init__(self, fn, unpack=None, instances=None, quiet=None,
-                 error_key=None):
+    def __init__(self, fn, unpack=None, instances=None, error_key=None, logger=None):     
         self.fn = fn
+        functools.update_wrapper(self, fn)
+
         self.error_key = "{1.__name__} <{0.__class__.__name__}>".format(
             self, fn
         ) if error_key is None else error_key
         self.unpack = self.__class__.UNPACK if unpack is None else unpack
         self.instances = self.__class__.INSTANCES if instances is None else instances
-        self.quiet = self.__class__.QUIET if quiet is None else quiet
+        self.logger = logger if logger is not None else default_logger
 
     def push_to(self, output_list):
         def do(task):
@@ -71,15 +72,14 @@ class Worker(object):
             output_list.append(finished_product)
 
     def log(self, item, exception):
-        self.error_buffer[self.error_key].append({
+        err = {
             "item": item,
             "exception": exception
-        })
-        if not self.quiet:
-            # don't raise exceptions here: tracebacks are misleading
-            print MSG.format(self.fn, exception, item)
+        }
+        self.error_buffer[self.error_key].append(err)
+        self.logger.exception(exception, err)
 
-    def __call__(self, work_list, output_list, error_buffer):
+    def __call__(self, work_list, output_list, error_buffer={}):
         # Prepare for errors
         self.error_buffer = error_buffer  # for self.log function
         error_buffer[self.error_key] = error_buffer.get(self.error_key, [])
@@ -88,7 +88,8 @@ class Worker(object):
         self.process(work_list, output_list)
 
         # Tell the next Trickler that no more is coming
-        output_list.nomore = True
+        if hasattr(output_list, "nomore"):
+            output_list.nomore = True
 
 
 class ThreadWorker(Worker):
@@ -142,14 +143,15 @@ class ProcessWorker(Worker):
         """
         def do(task):
             try:
-                res = self.fn(task)
+                return self.fn(task)
             except Exception as e:
                 self.log(task, e)
-            finally:
-                self.done(res, output_list)
+                return e
 
         pool = ProcessPool(self.instances)
-        pool.map(do, work_list)
+        for result in pool.imap(do, work_list):
+            if not isinstance(result, Exception):
+                self.done(result, output_list)
         pool.close()
         pool.join()
 
@@ -174,3 +176,6 @@ class API(object):
     @IOWorker
     def get(self, params):
         return requests.get(self.url, params=params)
+
+if __name__ == "__main__":
+    print "Hello World"

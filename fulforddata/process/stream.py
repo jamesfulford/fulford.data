@@ -2,10 +2,14 @@
 
 import time
 import threading
+import logging
 from copy import deepcopy
 
 import workers
 
+
+default_logger = logging.getLogger(__name__)
+default_logger.addHandler(logging.NullHandler())
 
 class Trickle(object):
     """
@@ -113,18 +117,19 @@ class Stream(object):
 
     >>> mystream.errors
     {
-        "Reciprocal <Worker>": [
+        "0: Reciprocal <Worker>": [
             {"item": 0, "exception": DivideByZeroException},  # 0th index
             {"item": 0, "exception": DivideByZeroException},  # 2nd index
             {"item": 0, "exception": DivideByZeroException},  # 6th index
         ]
     }
     """
-    def __init__(self, default_worker=workers.Worker, **worker_args):
+    def __init__(self, default_worker=workers.Worker, logger=None, **worker_args):
         self._workers = []
         self.errors = {}
         self.default_worker = default_worker
         self.defaults = worker_args
+        self.logger=logger if logger is not None else default_logger
 
     @property
     def preserves_order(self):
@@ -145,8 +150,14 @@ class Stream(object):
             if not isinstance(worker, workers.Worker):
                 worker_args = deepcopy(self.defaults)
                 worker_args.update(worker_overrides)
-                worker = self.default_worker(worker, **worker_args)
-            worker.error_key = len(self._workers)
+                worker = self.default_worker(worker, 
+                    logger=self.logger, 
+                    **worker_args
+                )
+            worker.error_key = "{}: {}".format(
+                len(self._workers),
+                worker.error_key
+            )
             self._workers.append(worker)
         return self
 
@@ -188,8 +199,7 @@ if __name__ == "__main__":
         return d
 
     def recip(d):
-        d["value"] = 1.0 / d["value"]
-        return d
+        return 1.0 / d
 
     def tee(d):
         time.sleep(d)
@@ -198,13 +208,20 @@ if __name__ == "__main__":
     #
     # Example
     #
+    import logging
+    lg = logging.getLogger(__name__)
+    lg.addHandler(logging.StreamHandler())
 
-    mystream = Stream(quiet=False).then([
-        tee,
+    mystream = Stream(logger=lg).then([
+        recip,
+        lambda x: x ** 2
     ])
 
-    results = mystream([0, 1])
-    # results.extend(mystream([4, 4, 9]))
+    for w in mystream._workers:
+        print w.__name__
+
+    results = mystream([1, 2])
+    results.extend(mystream([1, 0]))
     for i in results:
         print "Done:", i
 

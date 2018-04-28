@@ -1,12 +1,14 @@
 from inspect import getargspec
+import functools
 
 from fulforddata import constants as c
 
 
 def prepare_argument(fn, contexts):
     """
-    Passes only the arguments fn expects
-        from contexts dicitonary
+    Implements dependency injection.
+
+    (Passes only the arguments fn expects from contexts dicitonary)
     """
     args, varargs, varkwargs, defaults = getargspec(fn)
     arguments = map(lambda a: contexts.get(a, None), args)
@@ -15,30 +17,29 @@ def prepare_argument(fn, contexts):
 
 class ReadableFunction(object):
     """
-    Decorator for functions.
-
-    Acts like the function, with an eval-able .name attribute.
-    If given function returns a callable when called:
-        wraps callable with ReadableFunction,
-        and fills in the .name attribute to hold args used in call
-    Else, just returns the value.
-
-    __str__ or __repr__ will access .name.
+    Decorator for deferred-evaluation-generating functions
+        so you can print how a given function was obtained.
+    
+    Behaves well if deferred evaluator has been decorated with
+        functools.wraps.
 
     >>> @ReadableFunction
     ... def sample(a, b, c=42):
     ...     def inner_func():
     ...         return a + b + c
     ...     return inner_func
-
     >>> str(sample(1, 42, c=73))
     'sample(1, 42, c=73)'
+
+    >>> sample(1, 42, c=73)()  # calls inner_func
+    116
     """
     def __init__(self, fn, name=None):
         self.fn = fn
+        # functools.update_wrapper(self, fn)
         self.name = name if isinstance(name, c.STRINGS) else fn.__name__
         self.__name__ = self.name
-        self.__doc__ = fn.__doc__ if hasattr(fn, "__doc__") else self.__doc__
+        self.__doc__ = fn.__doc__  # if hasattr(fn, "__doc__") else self.__doc__
 
     def __str__(self):
         return self.name
@@ -88,6 +89,7 @@ def compose(*fns):
     The first function can accept anything, but output beyond that is passed
         as a single value.
     """
+    @functools.wraps(compose)
     def comp(*args, **kwargs):
         v = fns[0](*args, **kwargs)
         for fn in fns[1:]:
@@ -155,3 +157,22 @@ def pass_through(value, mapping, warn=False, **kwargs):
 
 if __name__ == "__main__":
     print pass_through(1, {1: 9})
+
+    @ReadableFunction
+    def sample(a, b, c=42):
+        """
+        sample docstring
+        """
+        # @functools.wraps(sample)
+        def inner_func():
+            """
+            inner_func docstring
+            """
+            return a + b + c
+        return inner_func
+
+    print str(sample(1, 42, c=73))
+    print sample(1, 42, c=73)()
+    print sample.__doc__
+    print sample(1, 42, c=73).__doc__
+    # 'sample(1, 42, c=73)'
