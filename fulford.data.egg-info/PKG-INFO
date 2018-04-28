@@ -1,11 +1,10 @@
 Metadata-Version: 1.0
 Name: fulford.data
-Version: 1.0.4
+Version: 1.0.5
 Summary: Declarative processing, transforming, and validating of data.
 
-New in 1.0.4:
--   Fixed process.Trickler iteration to not be internally recursive, sometimes
-    throwing stack overflow errors on long waits.
+New in 1.0.5:
+-   Enhanced error handling with workers and Streams (issue 14)
 
 Home-page: https://github.com/jamesfulford/fulford.data
 Author: James Patrick Fulford
