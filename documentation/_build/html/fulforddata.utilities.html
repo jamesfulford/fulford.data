@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fulforddata.utilities package &#8212; fulforddata  documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="fulforddata.validate package" href="fulforddata.validate.html" />
+    <link rel="prev" title="fulforddata.process package" href="fulforddata.process.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="fulforddata-utilities-package">
+<h1>fulforddata.utilities package<a class="headerlink" href="#fulforddata-utilities-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-fulforddata.utilities.functional">
+<span id="fulforddata-utilities-functional-module"></span><h2>fulforddata.utilities.functional module<a class="headerlink" href="#module-fulforddata.utilities.functional" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="fulforddata.utilities.functional.ReadableFunction">
+<em class="property">class </em><code class="descclassname">fulforddata.utilities.functional.</code><code class="descname">ReadableFunction</code><span class="sig-paren">(</span><em>fn</em>, <em>name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/functional.html#ReadableFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.functional.ReadableFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="docutils">
+<dt>Decorator for deferred-evaluation-generating functions</dt>
+<dd>so you can print how a given function was obtained.</dd>
+<dt>Behaves well if deferred evaluator has been decorated with</dt>
+<dd>functools.wraps.</dd>
+</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@ReadableFunction</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">inner_func</span><span class="p">():</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">inner_func</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">73</span><span class="p">))</span>
+<span class="go">&#39;sample(1, 42, c=73)&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">73</span><span class="p">)()</span>  <span class="c1"># calls inner_func</span>
+<span class="go">116</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.utilities.functional.compose">
+<code class="descclassname">fulforddata.utilities.functional.</code><code class="descname">compose</code><span class="sig-paren">(</span><em>*fns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/functional.html#compose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.functional.compose" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Returns a function that evaluates each function in order, starting with</dt>
+<dd>function 0&#8217;s output being fed into function 1&#8217;s input.</dd>
+<dt>The first function can accept anything, but output beyond that is passed</dt>
+<dd>as a single value.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.utilities.functional.pass_through">
+<code class="descclassname">fulforddata.utilities.functional.</code><code class="descname">pass_through</code><span class="sig-paren">(</span><em>value</em>, <em>mapping</em>, <em>warn=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/functional.html#pass_through"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.functional.pass_through" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to map value through mapping. If fails, returns input.
+Mapping can be a function or a dictionary.</p>
+<dl class="docutils">
+<dt>If function, key words are passed down to the function.</dt>
+<dd>Exceptions are caught and printed, returns value</dd>
+<dt>If dictionary, tries to get new value by inputting the value.</dt>
+<dd>If value is not hashable (list, set, etc.), prints and returns value</dd>
+</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pass_through</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">4</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pass_through</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;BLUE&quot;</span><span class="p">})</span>
+<span class="go">&quot;BLUE&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pass_through</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+<span class="go">&quot;color&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pass_through</span><span class="p">([</span><span class="s2">&quot;unhashable&quot;</span><span class="p">],</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+<span class="go">[&quot;unhashable&quot;]  # also prints error to stdout</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pass_through</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="p">)</span>
+<span class="go">0  # prints error to stdout</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.utilities.functional.prepare_argument">
+<code class="descclassname">fulforddata.utilities.functional.</code><code class="descname">prepare_argument</code><span class="sig-paren">(</span><em>fn</em>, <em>contexts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/functional.html#prepare_argument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.functional.prepare_argument" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements dependency injection.</p>
+<p>(Passes only the arguments fn expects from contexts dicitonary)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-fulforddata.utilities.tools">
+<span id="fulforddata-utilities-tools-module"></span><h2>fulforddata.utilities.tools module<a class="headerlink" href="#module-fulforddata.utilities.tools" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="fulforddata.utilities.tools.flatten_list">
+<code class="descclassname">fulforddata.utilities.tools.</code><code class="descname">flatten_list</code><span class="sig-paren">(</span><em>list_of_lists</em>, <em>depth=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/tools.html#flatten_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.tools.flatten_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of lists, unpacks all the items
+and puts it in one list.</p>
+<dl class="docutils">
+<dt>depth specifies how many layers deep we should flatten.</dt>
+<dd>by default flattens all layers</dd>
+</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flatten_list</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">]]]])</span>
+<span class="go">[1, 2, 3, 4, 5, 6, 7, 8]</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flatten_list</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">]]]],</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[1, 2, 3, 4, 5, [6, 7], [8]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.utilities.tools.partition">
+<code class="descclassname">fulforddata.utilities.tools.</code><code class="descname">partition</code><span class="sig-paren">(</span><em>fn</em>, <em>ls</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/utilities/tools.html#partition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.utilities.tools.partition" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Calls fn on each item in ls</dt>
+<dd>returns dictionary keyed on outputs of fn
+values being lists of items with that output</dd>
+</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">{1: [1], 4: [2, -2], 9: [3]}</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">partition</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[],</span> <span class="s2">&quot;Hello&quot;</span><span class="p">])</span>
+<span class="go">{True: [1, &quot;Hello&quot;], False: [0, []]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-fulforddata.utilities">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fulforddata.utilities" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">fulforddata.utilities package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-fulforddata.utilities.functional">fulforddata.utilities.functional module</a></li>
+<li><a class="reference internal" href="#module-fulforddata.utilities.tools">fulforddata.utilities.tools module</a></li>
+<li><a class="reference internal" href="#module-fulforddata.utilities">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="fulforddata.html">fulforddata package</a><ul>
+      <li>Previous: <a href="fulforddata.process.html" title="previous chapter">fulforddata.process package</a></li>
+      <li>Next: <a href="fulforddata.validate.html" title="next chapter">fulforddata.validate package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/fulforddata.utilities.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/fulforddata.utilities.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

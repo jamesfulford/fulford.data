@@ -1,0 +1,487 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fulforddata.process package &#8212; fulforddata  documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="fulforddata.utilities package" href="fulforddata.utilities.html" />
+    <link rel="prev" title="fulforddata.access package" href="fulforddata.access.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="fulforddata-process-package">
+<h1>fulforddata.process package<a class="headerlink" href="#fulforddata-process-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-fulforddata.process.fork">
+<span id="fulforddata-process-fork-module"></span><h2>fulforddata.process.fork module<a class="headerlink" href="#module-fulforddata.process.fork" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="fulforddata.process.fork.fork">
+<code class="descclassname">fulforddata.process.fork.</code><code class="descname">fork</code><span class="sig-paren">(</span><em>fns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/fork.html#fork"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.fork.fork" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.process.fork.mutate">
+<code class="descclassname">fulforddata.process.fork.</code><code class="descname">mutate</code><span class="sig-paren">(</span><em>key</em>, <em>mapper</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/fork.html#mutate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.fork.mutate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="fulforddata-process-stream-module">
+<h2>fulforddata.process.stream module<a class="headerlink" href="#fulforddata-process-stream-module" title="Permalink to this headline">¶</a></h2>
+<p>Imagine organizing an assembly line, where items of work flow from beginning to end.
+Each step is a worker in this line, doing just the simple task in front of him.
+By breaking the complex process down into small, manageable steps, more complicated processes
+can be easily managed. Furthermore, bottlenecks in the workflow can be more easily addressed
+with appropriate parallelization measures.</p>
+<span class="target" id="module-fulforddata.process.stream"></span><p>Stream</p>
+<dl class="class">
+<dt id="fulforddata.process.stream.Stream">
+<em class="property">class </em><code class="descclassname">fulforddata.process.stream.</code><code class="descname">Stream</code><span class="sig-paren">(</span><em>default_worker=&lt;class 'fulforddata.process.workers.Worker'&gt;</em>, <em>logger=None</em>, <em>**worker_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Represents a workflow made of multiple streamlined, order-dependent tasks.
+Useful for parallel processing and avoiding IO bottlenecks.</p>
+<p>To leverage parallization, be sure to wrap process functions in workers from
+fulforddata.process.workers.</p>
+<p>First, we should add 2 to each number, then we should square each number.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">addThenSquare</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">addThenSquare</span><span class="p">([</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
+<span class="go">[0, 1, 4, 9, 16]</span>
+</pre></div>
+</div>
+<p>(The output is wrapped with <cite>list</cite> because a Stream returns a sort of iterator
+which allows access to items as they finish processing. Wrapping in <cite>list</cite>
+forces the Stream to finish processing all items before returning.)</p>
+<p>Any keyword arguments are passed to the default worker upon initialization.
+To specify a worker type, wrap the function in that worker type
+and pass any keyword arguments there. Pre-initialized workers will not respect
+any keyword arguments supplied.</p>
+<p>For instance, the unpack argument accepted by workers allows for functions
+which return lists to have each item in the list considered as individual work
+items to the next worker.
+&gt;&gt;&gt; no_unpack = Stream().then(lambda x: [i for i in range(1, x)])
+&gt;&gt;&gt; list(no_unpack([3, 4, 5]))
+[[1, 2], [1, 2, 3], [1, 2, 3, 4]]</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">unpacks</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)],</span> <span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">unpacks</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]))</span>
+<span class="go">[1, 2, 1, 2, 3, 1, 2, 3, 4]</span>
+</pre></div>
+</div>
+<p>Here&#8217;s how we can improve a workflow
+&gt;&gt;&gt; from time import sleep
+&gt;&gt;&gt; def wait(t):
+...     sleep(t)
+...     print(&#8220;Ending &#8221; + str(t))
+...     return t
+...
+&gt;&gt;&gt; thinker = Stream().then(wait)</p>
+<p>By default, each worker is single-threaded. So, the only worker in this Stream
+will have to finish processing the first item before it can start on the next item,
+even if most of the processing consists of idle activity.
+&gt;&gt;&gt; list(thinker([3, 1, 4]))
+... # doctest: +SKIP
+Ending 3
+Ending 1
+Ending 4
+[3, 1, 4]</p>
+<p>After about 8 seconds of twiddling thumbs, thinker is completely finished processing.</p>
+<p>Instead of waiting to complete one task to start the next, perhaps we can do these
+in parallel by using a different worker. By default, Stream assigns each task to be a
+single-threaded Worker (the default can be changed with the __init__ argument <cite>default_worker</cite>)</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fulforddata.process.workers</span> <span class="k">import</span> <span class="n">IOWorker</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iothinker</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">IOWorker</span><span class="p">(</span><span class="n">wait</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">iothinker</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]))</span>
+<span class="gp">... </span>
+<span class="go">Ending 1</span>
+<span class="go">Ending 3</span>
+<span class="go">Ending 4</span>
+<span class="go">[1, 3, 4]</span>
+</pre></div>
+</div>
+<p>After 4 seconds of computation, iothinker is completely done processing.
+However, the output is not in the same order as the input! This is because
+of how IOWorker operates: it returns work as soon as it is finished back
+into the stream.</p>
+<p>For convenience, the property .preserves_order indicates whether all workers
+respect order or if one worker does not respect order.
+&gt;&gt;&gt; iothinker.preserves_order
+... # doctest: +SKIP
+False</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fulforddata.process.workers</span> <span class="k">import</span> <span class="n">ThreadWorker</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">threadthinker</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">ThreadWorker</span><span class="p">(</span><span class="n">wait</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">threadthinker</span><span class="o">.</span><span class="n">preserves_order</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">threadthinker</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]))</span>
+<span class="gp">... </span>
+<span class="go">Ending 1</span>
+<span class="go">Ending 3</span>
+<span class="go">Ending 4</span>
+<span class="go">[3, 1, 4]</span>
+</pre></div>
+</div>
+<p>This time, after only 4 seconds of computation, the process fully completes.
+The difference is that a ThreadWorker will start work on the next items,
+however it will not return the product back into the stream until all prior
+items have finished processing.</p>
+<p>Preserving the order comes at a cost, however: if a work item takes a long time to process, 
+it prevents all following items from re-entering the stream until it finishes processing, 
+causing a build-up of work for future workers to suddenly have to process after waiting for work to arrive.</p>
+<p>Errors:</p>
+<p>If any worker in the process raises an exception, the exception is logged
+to the logger (from the builtin logging module) provided to the Stream at
+initialization with the keyword <cite>logger</cite>.</p>
+<p>Exceptions are also put into the .errors dictionary, where keys are strings
+which include the name of the function. You can set some of these strings
+using the .error_key attribute of the worker provided. The values of this dictionary
+are lists of objects with the exception raised and the item it raised on.</p>
+<p>The item is removed from the Stream, and the worker moves on as usual.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">twelve_reciprocal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="mf">12.0</span> <span class="o">/</span> <span class="n">x</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">breakstream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="n">twelve_reciprocal</span><span class="p">)</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="nb">round</span><span class="p">)</span><span class="o">.</span><span class="n">then</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">breakstream</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+<span class="go">[6, 3, 2, 1, 12]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">error_key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">breakstream</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+<span class="gp">... </span>    <span class="nb">print</span> <span class="n">error_key</span>
+<span class="go">0: twelve_reciprocal &lt;Worker&gt;</span>
+<span class="go">1: round &lt;Worker&gt;</span>
+<span class="go">2: int &lt;Worker&gt;</span>
+</pre></div>
+</div>
+<p>TODO: allow user to turn off automatic numbering of errors</p>
+<dl class="attribute">
+<dt id="fulforddata.process.stream.Stream.preserves_order">
+<code class="descname">preserves_order</code><a class="headerlink" href="#fulforddata.process.stream.Stream.preserves_order" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.stream.Stream.then">
+<code class="descname">then</code><span class="sig-paren">(</span><em>worker</em>, <em>**worker_overrides</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Stream.then"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Stream.then" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends this worker (or these workers) at the end of the stream.</p>
+<dl class="docutils">
+<dt>If worker variable is not already a worker, wraps with this stream&#8217;s</dt>
+<dd>default worker (as specified during __init__)</dd>
+</dl>
+<p>Returns this stream.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fulforddata.process.stream.Trickle">
+<em class="property">class </em><code class="descclassname">fulforddata.process.stream.</code><code class="descname">Trickle</code><span class="sig-paren">(</span><em>work</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Trickle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Trickle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A iterable object which acts as a buffer between processing stations
+in a Stream. Can only be iterated over once.</p>
+<p>Difference between Trickle and a Queue is that Trickle.nomore is a flag to
+set which indicates that nothing else is coming, allowing the iterating
+code to distinguish between a build-up of work earlier in the process
+and between having no work at all left.</p>
+<dl class="method">
+<dt id="fulforddata.process.stream.Trickle.append">
+<code class="descname">append</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Trickle.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Trickle.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an item to the end of the line.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.stream.Trickle.extend">
+<code class="descname">extend</code><span class="sig-paren">(</span><em>items</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Trickle.extend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Trickle.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a list of items to the end of the line.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.stream.Trickle.get_next_if_any">
+<code class="descname">get_next_if_any</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Trickle.get_next_if_any"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Trickle.get_next_if_any" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the next item in the queue, if there is one queued.
+If nothing is waiting in queue, return None.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.stream.Trickle.i">
+<code class="descname">i</code><em class="property"> = None</em><a class="headerlink" href="#fulforddata.process.stream.Trickle.i" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates how far in the list the iteration has gone, by index.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.stream.Trickle.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/stream.html#Trickle.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.stream.Trickle.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns next item in the work list. Skips items of value &#8216;None&#8217;.
+If no items remain and the nomore flag is True, raises StopIteration.
+Otherwise, waits and tries again.</p>
+<p>If told no new items will be added and the work list has been
+exhausted, then will stop waiting for new items and will raise
+a StopIteration.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.stream.Trickle.nomore">
+<code class="descname">nomore</code><em class="property"> = None</em><a class="headerlink" href="#fulforddata.process.stream.Trickle.nomore" title="Permalink to this definition">¶</a></dt>
+<dd><p>When true, once the current queue of items is exhausted, iteration must end.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.stream.Trickle.work">
+<code class="descname">work</code><em class="property"> = None</em><a class="headerlink" href="#fulforddata.process.stream.Trickle.work" title="Permalink to this definition">¶</a></dt>
+<dd><p>Python list storing all items in queue.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-fulforddata.process.workers">
+<span id="fulforddata-process-workers-module"></span><h2>fulforddata.process.workers module<a class="headerlink" href="#module-fulforddata.process.workers" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="fulforddata.process.workers.API">
+<em class="property">class </em><code class="descclassname">fulforddata.process.workers.</code><code class="descname">API</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#API"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.API" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="fulforddata.process.workers.API.get">
+<code class="descname">get</code><em class="property"> = &lt;fulforddata.process.workers.IOWorker object&gt;</em><a class="reference internal" href="_modules/fulforddata/process/workers.html#API.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.API.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.API.post">
+<code class="descname">post</code><em class="property"> = &lt;fulforddata.process.workers.IOWorker object&gt;</em><a class="reference internal" href="_modules/fulforddata/process/workers.html#API.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.API.post" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fulforddata.process.workers.IOWorker">
+<em class="property">class </em><code class="descclassname">fulforddata.process.workers.</code><code class="descname">IOWorker</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#IOWorker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.IOWorker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fulforddata.process.workers.Worker" title="fulforddata.process.workers.Worker"><code class="xref py py-class docutils literal"><span class="pre">fulforddata.process.workers.Worker</span></code></a></p>
+<p>Does not preserve order, in exchange for less bottlenecking downstream.</p>
+<dl class="attribute">
+<dt id="fulforddata.process.workers.IOWorker.INSTANCES">
+<code class="descname">INSTANCES</code><em class="property"> = 12</em><a class="headerlink" href="#fulforddata.process.workers.IOWorker.INSTANCES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.IOWorker.PRESERVES_ORDER">
+<code class="descname">PRESERVES_ORDER</code><em class="property"> = False</em><a class="headerlink" href="#fulforddata.process.workers.IOWorker.PRESERVES_ORDER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.IOWorker.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>work_list</em>, <em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#IOWorker.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.IOWorker.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fulforddata.process.workers.ProcessWorker">
+<em class="property">class </em><code class="descclassname">fulforddata.process.workers.</code><code class="descname">ProcessWorker</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#ProcessWorker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.ProcessWorker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fulforddata.process.workers.Worker" title="fulforddata.process.workers.Worker"><code class="xref py py-class docutils literal"><span class="pre">fulforddata.process.workers.Worker</span></code></a></p>
+<dl class="attribute">
+<dt id="fulforddata.process.workers.ProcessWorker.INSTANCES">
+<code class="descname">INSTANCES</code><em class="property"> = 4</em><a class="headerlink" href="#fulforddata.process.workers.ProcessWorker.INSTANCES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.ProcessWorker.PRESERVES_ORDER">
+<code class="descname">PRESERVES_ORDER</code><em class="property"> = False</em><a class="headerlink" href="#fulforddata.process.workers.ProcessWorker.PRESERVES_ORDER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.ProcessWorker.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>work_list</em>, <em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#ProcessWorker.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.ProcessWorker.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>NOTE: This is not preserving order right now.
+NOTE: This also may not work.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fulforddata.process.workers.ThreadWorker">
+<em class="property">class </em><code class="descclassname">fulforddata.process.workers.</code><code class="descname">ThreadWorker</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#ThreadWorker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.ThreadWorker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#fulforddata.process.workers.Worker" title="fulforddata.process.workers.Worker"><code class="xref py py-class docutils literal"><span class="pre">fulforddata.process.workers.Worker</span></code></a></p>
+<p>Preserves order. If one request takes too long, the worker will start on
+later work but will hold up the stream until the slow request finishes.</p>
+<dl class="attribute">
+<dt id="fulforddata.process.workers.ThreadWorker.INSTANCES">
+<code class="descname">INSTANCES</code><em class="property"> = 6</em><a class="headerlink" href="#fulforddata.process.workers.ThreadWorker.INSTANCES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.ThreadWorker.PRESERVES_ORDER">
+<code class="descname">PRESERVES_ORDER</code><em class="property"> = True</em><a class="headerlink" href="#fulforddata.process.workers.ThreadWorker.PRESERVES_ORDER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.ThreadWorker.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>work_list</em>, <em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#ThreadWorker.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.ThreadWorker.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="fulforddata.process.workers.Worker">
+<em class="property">class </em><code class="descclassname">fulforddata.process.workers.</code><code class="descname">Worker</code><span class="sig-paren">(</span><em>fn</em>, <em>unpack=None</em>, <em>instances=None</em>, <em>error_key=None</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="docutils">
+<dt>Wraps function which does work. When called, uses wrapped function on each</dt>
+<dd>input and outputs into buffer given.</dd>
+<dt>If wrapped function raises an exception, that item is excluded from output</dt>
+<dd>and the item is collected in error_buffer under self.error_key
+and the exception is collected under self.error_key + &#8220;_exception&#8221;.
+It is also logged to given logger as an exception.</dd>
+</dl>
+<p>When done ALL work, sets output_list.nomore to True.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">recip</span> <span class="o">=</span> <span class="n">Worker</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">work</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[],</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">recip</span><span class="p">(</span><span class="n">work</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span>
+<span class="go">[.5, 1.0]</span>
+<span class="go"># NOTE: work item #3, which was 0, raised an error</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="fulforddata.process.workers.Worker.INSTANCES">
+<code class="descname">INSTANCES</code><em class="property"> = 1</em><a class="headerlink" href="#fulforddata.process.workers.Worker.INSTANCES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.Worker.PRESERVES_ORDER">
+<code class="descname">PRESERVES_ORDER</code><em class="property"> = True</em><a class="headerlink" href="#fulforddata.process.workers.Worker.PRESERVES_ORDER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="fulforddata.process.workers.Worker.UNPACK">
+<code class="descname">UNPACK</code><em class="property"> = False</em><a class="headerlink" href="#fulforddata.process.workers.Worker.UNPACK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.Worker.done">
+<code class="descname">done</code><span class="sig-paren">(</span><em>finished_product</em>, <em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#Worker.done"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.Worker.done" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.Worker.log">
+<code class="descname">log</code><span class="sig-paren">(</span><em>item</em>, <em>exception</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#Worker.log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.Worker.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.Worker.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>work_list</em>, <em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#Worker.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.Worker.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default: single-threaded execution of work.
+Override this function for different workers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="fulforddata.process.workers.Worker.push_to">
+<code class="descname">push_to</code><span class="sig-paren">(</span><em>output_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#Worker.push_to"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.Worker.push_to" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="fulforddata.process.workers.query">
+<code class="descclassname">fulforddata.process.workers.</code><code class="descname">query</code><span class="sig-paren">(</span><em>engine</em>, <em>sql</em>, <em>**defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fulforddata/process/workers.html#query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fulforddata.process.workers.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-fulforddata.process">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-fulforddata.process" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">fulforddata.process package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-fulforddata.process.fork">fulforddata.process.fork module</a></li>
+<li><a class="reference internal" href="#fulforddata-process-stream-module">fulforddata.process.stream module</a></li>
+<li><a class="reference internal" href="#module-fulforddata.process.workers">fulforddata.process.workers module</a></li>
+<li><a class="reference internal" href="#module-fulforddata.process">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="fulforddata.html">fulforddata package</a><ul>
+      <li>Previous: <a href="fulforddata.access.html" title="previous chapter">fulforddata.access package</a></li>
+      <li>Next: <a href="fulforddata.utilities.html" title="next chapter">fulforddata.utilities package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/fulforddata.process.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/fulforddata.process.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

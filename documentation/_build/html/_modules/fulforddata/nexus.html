@@ -1,0 +1,301 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fulforddata.nexus &#8212; fulforddata  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fulforddata.nexus</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">from</span> <span class="nn">fulforddata.utilities.tools</span> <span class="k">import</span> <span class="n">flatten_list</span><span class="p">,</span> <span class="n">partition</span>
+
+<span class="kn">from</span> <span class="nn">fulforddata.access</span> <span class="k">import</span> <span class="n">retrieve</span>
+<span class="kn">from</span> <span class="nn">fulforddata.access.accessors</span> <span class="k">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">fulforddata.validate</span> <span class="k">import</span> <span class="n">check</span>
+<span class="kn">from</span> <span class="nn">fulforddata.validate.validators</span> <span class="k">import</span> <span class="o">*</span>
+
+
+<div class="viewcode-block" id="Nexus"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus">[docs]</a><span class="k">class</span> <span class="nc">Nexus</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>  <span class="c1"># what a valid entry looks like</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># valid entries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rejects</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># all entries that fail validation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">packed</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># all entries that failed unpacking</span>
+
+<div class="viewcode-block" id="Nexus.add"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unpackers</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds valid entries (passed later) in format given by unpackers</span>
+<span class="sd">            to self.entries.</span>
+<span class="sd">        Invalid entries added to self.rejects</span>
+<span class="sd">        Un-unpackable entries added to self.packed</span>
+
+<span class="sd">        Passes extra args to each getter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">retrieve</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">unpackers</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">adder</span><span class="p">(</span><span class="n">entries</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">entries</span><span class="p">)</span>  <span class="c1"># unpack</span>
+
+            <span class="c1">#</span>
+            <span class="c1"># Validate</span>
+            <span class="c1">#</span>
+            <span class="n">parting</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">check</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span> <span class="k">if</span> <span class="n">e</span> <span class="k">else</span> <span class="n">e</span><span class="p">,</span>
+                                <span class="n">results</span><span class="p">)</span>
+
+            <span class="c1"># Store results</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>  <span class="c1"># successful mappings and valid</span>
+                <span class="n">parting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rejects</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>  <span class="c1"># successful mappings and invalid</span>
+                <span class="n">parting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">packed</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>  <span class="c1"># unsuccessful mappings</span>
+                <span class="n">parting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">adder</span></div>
+
+<div class="viewcode-block" id="Nexus.get_rows"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus.get_rows">[docs]</a>    <span class="k">def</span> <span class="nf">get_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns data as rows according to given columns</span>
+
+<span class="sd">        Examples given use columns:</span>
+<span class="sd">        [</span>
+<span class="sd">            (0, access(&quot;x&quot;, default=0, mapping=IDENTITY)),</span>
+<span class="sd">            (2, access(&quot;y&quot;, mapping=abs))</span>
+<span class="sd">        ]</span>
+
+<span class="sd">        (Columns can also be a dictionary)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            &gt;&gt;&gt; transform({&quot;x&quot;: 2.33, &quot;y&quot;: -3.14})</span>
+<span class="sd">            {0: 2.33, 2: 3.14}</span>
+<span class="sd">            Returns None if an accessor raised Exception.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">retrieve</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">make_row</span><span class="p">(</span><span class="n">ent</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Keys will be index values,</span>
+<span class="sd">            Values will be values.</span>
+<span class="sd">            If key not in ent, will use fill as value.</span>
+
+<span class="sd">            &gt;&gt;&gt; make_row({0: 2.33, 2: 3.14})</span>
+<span class="sd">            [2.33, &quot;&quot;, 3.14]</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">ent</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">fill</span><span class="p">),</span>  <span class="c1"># get ith value from ent</span>
+                       <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ent</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>  <span class="c1"># 0 to largest col</span>
+
+        <span class="c1"># Filter out formations that failed</span>
+        <span class="n">formed_dicts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">))</span>
+
+        <span class="c1"># Return as rows</span>
+        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="n">make_row</span><span class="p">,</span> <span class="n">formed_dicts</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Nexus.get_dictionaries"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus.get_dictionaries">[docs]</a>    <span class="k">def</span> <span class="nf">get_dictionaries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given dictionary (form), runs accessor values on each</span>
+<span class="sd">        of the entries stored.</span>
+
+<span class="sd">        Example form is {</span>
+<span class="sd">            &quot;time&quot;: access(&quot;x&quot;),</span>
+<span class="sd">            &quot;measures&quot;: {</span>
+<span class="sd">                &quot;pirates&quot;: access(&quot;y1&quot;, default=0),</span>
+<span class="sd">                &quot;CO 2&quot;: access(&quot;y2&quot;, mapping=lambda n: round(n, 3))</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">entry</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">retrieve</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Nexus.get_writeable_rows"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus.get_writeable_rows">[docs]</a>    <span class="k">def</span> <span class="nf">get_writeable_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">,</span>
+                           <span class="n">subdelimiter</span><span class="o">=</span><span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns list of delimited strings from self.get_rows()</span>
+
+<span class="sd">        Lists of lists will be flattened.</span>
+<span class="sd">        (unable to represent lists of lists in strings)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">stringify_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ITERABLES</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stringify_cell</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">else</span> <span class="n">s</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">subdelimiter</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rows</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">headers</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)]</span> <span class="o">+</span> <span class="n">output</span>
+
+        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">delimiter</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">stringify_cell</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">delimiter</span><span class="p">,</span> <span class="s2">&quot;|&quot;</span><span class="p">),</span> <span class="n">r</span><span class="p">)</span>
+        <span class="p">),</span> <span class="n">output</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Nexus.validate"><a class="viewcode-back" href="../../fulforddata.html#fulforddata.nexus.Nexus.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="o">**</span><span class="n">contexts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Using each template, which has a similar structure to each entry,</span>
+<span class="sd">        will apply each leaf function on each entry in self.entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">final_context</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;entries&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">entries</span>
+        <span class="p">}</span>
+        <span class="n">final_context</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span>
+
+        <span class="n">parting</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">check</span><span class="p">(</span>
+                <span class="n">e</span><span class="p">,</span>
+                <span class="n">template</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">final_context</span>
+            <span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">entries</span>
+        <span class="p">)</span>
+
+        <span class="c1">#</span>
+        <span class="c1"># Replace entries with valid entries</span>
+        <span class="c1"># Add invalid entries to rejects</span>
+        <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entries</span> <span class="o">=</span> <span class="n">parting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rejects</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parting</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">[]))</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;james&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">10</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="s2">&quot;james&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">20</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;extra_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">2</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="s2">&quot;james&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">30</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;extra_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">2</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="n">unpackers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">access</span><span class="p">([</span><span class="s2">&quot;james&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;x_coord&quot;</span><span class="p">:</span> <span class="n">try_deeper_key</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;extra_data&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="s2">&quot;y_coord&quot;</span><span class="p">:</span> <span class="n">access</span><span class="p">([</span><span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="s2">&quot;square_id&quot;</span><span class="p">:</span> <span class="n">access</span><span class="p">(</span><span class="s2">&quot;james/id&quot;</span><span class="p">,</span> <span class="n">mapping</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="n">declaration</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">be_an</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;x_coord&quot;</span><span class="p">:</span> <span class="n">be_an</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;y_coord&quot;</span><span class="p">:</span> <span class="n">be_an</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span>
+        <span class="s2">&quot;square_id&quot;</span><span class="p">:</span> <span class="n">be_good</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nb">print</span> <span class="s2">&quot;Unpackers: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unpackers</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">Nexus</span><span class="p">(</span><span class="n">declaration</span><span class="p">)</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">unpackers</span><span class="p">)(</span><span class="n">entries</span><span class="p">)</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">validate</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">be_unique</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)})</span>
+    <span class="nb">print</span> <span class="s2">&quot;Entries&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;Rejects&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">rejects</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;Packed &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">packed</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

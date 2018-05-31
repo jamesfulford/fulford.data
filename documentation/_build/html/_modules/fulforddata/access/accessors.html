@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fulforddata.access.accessors &#8212; fulforddata  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fulforddata.access.accessors</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="kn">from</span> <span class="nn">fulforddata</span> <span class="k">import</span> <span class="n">constants</span> <span class="k">as</span> <span class="n">c</span>
+<span class="kn">from</span> <span class="nn">fulforddata.utilities.tools</span> <span class="k">import</span> <span class="n">flatten_list</span>
+
+<span class="kn">from</span> <span class="nn">fulforddata.utilities.functional</span> <span class="k">import</span> <span class="n">pass_through</span>
+<span class="kn">from</span> <span class="nn">fulforddata.utilities.functional</span> <span class="k">import</span> <span class="n">ReadableFunction</span> <span class="k">as</span> <span class="n">accessor</span>
+
+
+<div class="viewcode-block" id="resolve_keypath"><a class="viewcode-back" href="../../../fulforddata.access.html#fulforddata.access.accessors.resolve_keypath">[docs]</a><span class="k">def</span> <span class="nf">resolve_keypath</span><span class="p">(</span><span class="n">keypath</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts keypath into a list of keys to pass through.</span>
+<span class="sd">    If keypath is a string, makes list by splitting on split</span>
+
+<span class="sd">    &gt;&gt;&gt; resolve_keypath([&quot;a&quot;, &quot;b&quot;])</span>
+<span class="sd">    [&quot;a&quot;, &quot;b&quot;]</span>
+
+<span class="sd">    &gt;&gt;&gt; resolve_keypath(&quot;a/b&quot;)</span>
+<span class="sd">    [&quot;a&quot;, &quot;b&quot;]</span>
+
+<span class="sd">    &gt;&gt;&gt; resolve_keypath(&quot;a_b&quot;, split=&quot;_&quot;)</span>
+<span class="sd">    [&quot;a&quot;, &quot;b&quot;]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keypath</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">STRINGS</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="n">keypath</span> <span class="o">=</span> <span class="n">keypath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">split</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">keypath</span> <span class="o">=</span> <span class="p">[</span><span class="n">keypath</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">keypath</span></div>
+
+
+<span class="nd">@accessor</span>
+<span class="k">def</span> <span class="nf">access</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a function which obtains the value of *key* in</span>
+<span class="sd">    later-passed-in data. If key is a string and split is specified, will split</span>
+<span class="sd">    key on split value and use that list as the key path. Default: /</span>
+
+<span class="sd">    If default is not None, returned function will return *default*</span>
+<span class="sd">    if key not found in data.</span>
+
+<span class="sd">    If flatten, passes flatten to flatten_list for each entry.</span>
+<span class="sd">    The results structure is always list_flattened.</span>
+
+<span class="sd">    If mapping is not falsey, will return the result of the mapping</span>
+<span class="sd">    or the original value if fails. Accepts dictionary or function.</span>
+<span class="sd">    (Warn is passed to pass_through)</span>
+
+<span class="sd">    If get_attr is set, will access on this attribute on each entry.</span>
+<span class="sd">    (ex: custom dict wrapping objects, stored dict in .data)</span>
+
+<span class="sd">    If faulty key, will raise KeyError.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key</span> <span class="o">=</span> <span class="n">resolve_keypath</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">)</span>
+
+    <span class="c1"># Warning: recursion.</span>
+    <span class="k">def</span> <span class="nf">get_deeper</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">leaf</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns data at key k.</span>
+
+<span class="sd">        If data is a list, gets k from each item in the list.</span>
+<span class="sd">        If default is set, returns default value on fail</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">ITERABLES</span><span class="p">):</span>
+            <span class="n">get_deeper</span><span class="o">.</span><span class="n">non_data_lists</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># set before calling</span>
+            <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">dp</span><span class="p">:</span> <span class="n">get_deeper</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">leaf</span><span class="o">=</span><span class="n">leaf</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">DICTIONARIES</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">leaf</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">default</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>  <span class="c1"># TypeError or KeyError</span>
+    
+    <span class="c1"># @functools.wraps</span>
+    <span class="k">def</span> <span class="nf">get_deep_key_from_dictionary</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets deep key from data. Ignores resource.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># handling objects</span>
+        <span class="k">if</span> <span class="n">get_attr</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">get_attr</span><span class="p">)</span>
+
+        <span class="c1"># this handles depth</span>
+        <span class="n">get_deeper</span><span class="o">.</span><span class="n">non_data_lists</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># incremented in get_deeper</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">get_deeper</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">leaf</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># now getting ready to return data</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">ITERABLES</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">get_deeper</span><span class="o">.</span><span class="n">non_data_lists</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">flatten</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="n">flatten_list</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">flatten</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mapping</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">pass_through</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">return</span> <span class="n">get_deep_key_from_dictionary</span>
+
+
+<span class="nd">@accessor</span>
+<span class="k">def</span> <span class="nf">try_deeper_key</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">deep_key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns getter which tries to access from parent dictionary.</span>
+<span class="sd">    If no success, tries to grab from deep_key dictionary instead.</span>
+<span class="sd">    If that fails, uses access&#39;s default option.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">try_access</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">deep_key</span><span class="o">=</span><span class="n">deep_key</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">access</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># Build new path starting from deep_key</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">resolve_keypath</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">deep_key</span> <span class="o">=</span> <span class="n">resolve_keypath</span><span class="p">(</span><span class="n">deep_key</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">deep_key</span> <span class="o">+</span> <span class="n">key</span>
+            <span class="c1"># Try accessing new key path</span>
+            <span class="k">return</span> <span class="n">access</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">try_access</span>
+
+
+<span class="nd">@accessor</span>
+<span class="k">def</span> <span class="nf">always</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Always returns the same *value* irregardless of inputs&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">always_return</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">return</span> <span class="n">always_return</span>
+
+
+<span class="n">blank</span> <span class="o">=</span> <span class="n">always</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="n">blank</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;Always returns the empty string (</span><span class="se">\&quot;\&quot;</span><span class="s2">).&quot;</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span> <span class="n">access</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+    <span class="nb">print</span> <span class="n">access</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="nb">print</span> <span class="n">access</span><span class="o">.</span><span class="vm">__doc__</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../access.html">fulforddata.access</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,3 +1,7 @@
+"""
+Tools for accessing and transforming dictionaries declaratively.
+"""
+
 
 from fulforddata import constants as c
 from fulforddata.access.accessors import access

@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fulforddata.process.stream &#8212; fulforddata  documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fulforddata.process.stream</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Stream</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">workers</span>
+
+
+<span class="n">default_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">default_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Trickle"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Trickle">[docs]</a><span class="k">class</span> <span class="nc">Trickle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A iterable object which acts as a buffer between processing stations</span>
+<span class="sd">    in a Stream. Can only be iterated over once.</span>
+
+<span class="sd">    Difference between Trickle and a Queue is that Trickle.nomore is a flag to</span>
+<span class="sd">    set which indicates that nothing else is coming, allowing the iterating</span>
+<span class="sd">    code to distinguish between a build-up of work earlier in the process</span>
+<span class="sd">    and between having no work at all left.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">work</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">work</span> <span class="o">=</span> <span class="n">work</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Python list storing all items in queue.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Indicates how far in the list the iteration has gone, by index.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">nomore</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When true, once the current queue of items is exhausted, iteration must end.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Tricker(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="p">)</span>
+
+    <span class="fm">__str__</span> <span class="o">=</span> <span class="fm">__repr__</span>
+
+<div class="viewcode-block" id="Trickle.append"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Trickle.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add an item to the end of the line.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trickle.extend"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Trickle.extend">[docs]</a>    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a list of items to the end of the line.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Trickle.get_next_if_any"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Trickle.get_next_if_any">[docs]</a>    <span class="k">def</span> <span class="nf">get_next_if_any</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the next item in the queue, if there is one queued.</span>
+<span class="sd">        If nothing is waiting in queue, return None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">work</span><span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># print &quot;Trickling item&quot;, self.i</span>
+            <span class="k">return</span> <span class="n">ret</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Trickle.next"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Trickle.next">[docs]</a>    <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns next item in the work list. Skips items of value &#39;None&#39;.</span>
+<span class="sd">        If no items remain and the nomore flag is True, raises StopIteration.</span>
+<span class="sd">        Otherwise, waits and tries again.</span>
+
+<span class="sd">        If told no new items will be added and the work list has been</span>
+<span class="sd">        exhausted, then will stop waiting for new items and will raise</span>
+<span class="sd">        a StopIteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># waiting</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_if_any</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># feature: value None is filtered out</span>
+                <span class="k">return</span> <span class="n">item</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nomore</span><span class="p">:</span>  <span class="c1"># if nothing else is coming</span>
+                <span class="k">break</span>  <span class="c1"># stop waiting</span>
+
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># wait before checking again</span>
+
+        <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>  <span class="c1"># tell next worker nothing else is coming</span></div></div>
+
+
+<div class="viewcode-block" id="Stream"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Stream">[docs]</a><span class="k">class</span> <span class="nc">Stream</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a workflow made of multiple streamlined, order-dependent tasks.</span>
+<span class="sd">    Useful for parallel processing and avoiding IO bottlenecks.</span>
+
+<span class="sd">    To leverage parallization, be sure to wrap process functions in workers from</span>
+<span class="sd">    fulforddata.process.workers.</span>
+
+<span class="sd">    First, we should add 2 to each number, then we should square each number.</span>
+
+<span class="sd">    &gt;&gt;&gt; addThenSquare = Stream().then(lambda x: x + 2).then(lambda x: x ** 2)</span>
+<span class="sd">    &gt;&gt;&gt; list(addThenSquare([-2, -1, 0, 1, 2]))</span>
+<span class="sd">    [0, 1, 4, 9, 16]</span>
+
+<span class="sd">    (The output is wrapped with `list` because a Stream returns a sort of iterator</span>
+<span class="sd">    which allows access to items as they finish processing. Wrapping in `list`</span>
+<span class="sd">    forces the Stream to finish processing all items before returning.)</span>
+
+<span class="sd">    Any keyword arguments are passed to the default worker upon initialization.</span>
+<span class="sd">    To specify a worker type, wrap the function in that worker type</span>
+<span class="sd">    and pass any keyword arguments there. Pre-initialized workers will not respect</span>
+<span class="sd">    any keyword arguments supplied.</span>
+
+<span class="sd">    For instance, the unpack argument accepted by workers allows for functions</span>
+<span class="sd">    which return lists to have each item in the list considered as individual work</span>
+<span class="sd">    items to the next worker.</span>
+<span class="sd">    &gt;&gt;&gt; no_unpack = Stream().then(lambda x: [i for i in range(1, x)])</span>
+<span class="sd">    &gt;&gt;&gt; list(no_unpack([3, 4, 5]))</span>
+<span class="sd">    [[1, 2], [1, 2, 3], [1, 2, 3, 4]]</span>
+
+<span class="sd">    &gt;&gt;&gt; unpacks = Stream().then(lambda x: [i for i in range(1, x)], unpack=True)</span>
+<span class="sd">    &gt;&gt;&gt; list(unpacks([3, 4, 5]))</span>
+<span class="sd">    [1, 2, 1, 2, 3, 1, 2, 3, 4]</span>
+
+<span class="sd">    Here&#39;s how we can improve a workflow</span>
+<span class="sd">    &gt;&gt;&gt; from time import sleep</span>
+<span class="sd">    &gt;&gt;&gt; def wait(t):</span>
+<span class="sd">    ...     sleep(t)</span>
+<span class="sd">    ...     print(&quot;Ending &quot; + str(t))</span>
+<span class="sd">    ...     return t</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; thinker = Stream().then(wait)</span>
+
+<span class="sd">    By default, each worker is single-threaded. So, the only worker in this Stream</span>
+<span class="sd">    will have to finish processing the first item before it can start on the next item,</span>
+<span class="sd">    even if most of the processing consists of idle activity.</span>
+<span class="sd">    &gt;&gt;&gt; list(thinker([3, 1, 4]))</span>
+<span class="sd">    ... # doctest: +SKIP</span>
+<span class="sd">    Ending 3</span>
+<span class="sd">    Ending 1</span>
+<span class="sd">    Ending 4</span>
+<span class="sd">    [3, 1, 4]</span>
+
+<span class="sd">    After about 8 seconds of twiddling thumbs, thinker is completely finished processing.</span>
+
+<span class="sd">    Instead of waiting to complete one task to start the next, perhaps we can do these</span>
+<span class="sd">    in parallel by using a different worker. By default, Stream assigns each task to be a</span>
+<span class="sd">    single-threaded Worker (the default can be changed with the __init__ argument `default_worker`)</span>
+
+<span class="sd">    &gt;&gt;&gt; from fulforddata.process.workers import IOWorker</span>
+<span class="sd">    &gt;&gt;&gt; iothinker = Stream().then(IOWorker(wait))</span>
+<span class="sd">    &gt;&gt;&gt; list(iothinker([3, 1, 4]))</span>
+<span class="sd">    ... # doctest: +SKIP</span>
+<span class="sd">    Ending 1</span>
+<span class="sd">    Ending 3</span>
+<span class="sd">    Ending 4</span>
+<span class="sd">    [1, 3, 4]</span>
+
+<span class="sd">    After 4 seconds of computation, iothinker is completely done processing.</span>
+<span class="sd">    However, the output is not in the same order as the input! This is because</span>
+<span class="sd">    of how IOWorker operates: it returns work as soon as it is finished back</span>
+<span class="sd">    into the stream.</span>
+
+<span class="sd">    For convenience, the property .preserves_order indicates whether all workers</span>
+<span class="sd">    respect order or if one worker does not respect order.</span>
+<span class="sd">    &gt;&gt;&gt; iothinker.preserves_order</span>
+<span class="sd">    ... # doctest: +SKIP</span>
+<span class="sd">    False</span>
+
+<span class="sd">    &gt;&gt;&gt; from fulforddata.process.workers import ThreadWorker</span>
+<span class="sd">    &gt;&gt;&gt; threadthinker = Stream().then(ThreadWorker(wait))</span>
+<span class="sd">    &gt;&gt;&gt; threadthinker.preserves_order</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; list(threadthinker([3, 1, 4]))</span>
+<span class="sd">    ... # doctest: +SKIP</span>
+<span class="sd">    Ending 1</span>
+<span class="sd">    Ending 3</span>
+<span class="sd">    Ending 4</span>
+<span class="sd">    [3, 1, 4]</span>
+
+<span class="sd">    This time, after only 4 seconds of computation, the process fully completes.</span>
+<span class="sd">    The difference is that a ThreadWorker will start work on the next items,</span>
+<span class="sd">    however it will not return the product back into the stream until all prior</span>
+<span class="sd">    items have finished processing. </span>
+<span class="sd">    </span>
+<span class="sd">    Preserving the order comes at a cost, however: if a work item takes a long time to process, </span>
+<span class="sd">    it prevents all following items from re-entering the stream until it finishes processing, </span>
+<span class="sd">    causing a build-up of work for future workers to suddenly have to process after waiting for work to arrive.</span>
+
+<span class="sd">    Errors:</span>
+
+<span class="sd">    If any worker in the process raises an exception, the exception is logged</span>
+<span class="sd">    to the logger (from the builtin logging module) provided to the Stream at</span>
+<span class="sd">    initialization with the keyword `logger`.</span>
+
+<span class="sd">    Exceptions are also put into the .errors dictionary, where keys are strings</span>
+<span class="sd">    which include the name of the function. You can set some of these strings</span>
+<span class="sd">    using the .error_key attribute of the worker provided. The values of this dictionary</span>
+<span class="sd">    are lists of objects with the exception raised and the item it raised on.</span>
+
+<span class="sd">    The item is removed from the Stream, and the worker moves on as usual.</span>
+
+<span class="sd">    &gt;&gt;&gt; def twelve_reciprocal(x):</span>
+<span class="sd">    ...     return 12.0 / x</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; breakstream = Stream().then(twelve_reciprocal).then(round).then(int)</span>
+<span class="sd">    &gt;&gt;&gt; list(breakstream([2, 4, 0, 6, 12, 1]))</span>
+<span class="sd">    [6, 3, 2, 1, 12]</span>
+<span class="sd">    &gt;&gt;&gt; for error_key, value in sorted(breakstream.errors.items()):</span>
+<span class="sd">    ...     print error_key</span>
+<span class="sd">    0: twelve_reciprocal &lt;Worker&gt;</span>
+<span class="sd">    1: round &lt;Worker&gt;</span>
+<span class="sd">    2: int &lt;Worker&gt;</span>
+
+<span class="sd">    TODO: allow user to turn off automatic numbering of errors    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_worker</span><span class="o">=</span><span class="n">workers</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">worker_args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_workers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_worker</span> <span class="o">=</span> <span class="n">default_worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span> <span class="o">=</span> <span class="n">worker_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">=</span><span class="n">logger</span> <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_logger</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">preserves_order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">PRESERVES_ORDER</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Stream.then"><a class="viewcode-back" href="../../../fulforddata.process.html#fulforddata.process.stream.Stream.then">[docs]</a>    <span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker</span><span class="p">,</span> <span class="o">**</span><span class="n">worker_overrides</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends this worker (or these workers) at the end of the stream.</span>
+
+<span class="sd">        If worker variable is not already a worker, wraps with this stream&#39;s</span>
+<span class="sd">            default worker (as specified during __init__)</span>
+
+<span class="sd">        Returns this stream.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+            <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">then</span><span class="p">,</span> <span class="n">worker</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">workers</span><span class="o">.</span><span class="n">Worker</span><span class="p">):</span>
+                <span class="n">worker_args</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">)</span>
+                <span class="n">worker_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">worker_overrides</span><span class="p">)</span>
+                <span class="n">worker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_worker</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> 
+                    <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span> 
+                    <span class="o">**</span><span class="n">worker_args</span>
+                <span class="p">)</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">error_key</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="p">),</span>
+                <span class="n">worker</span><span class="o">.</span><span class="n">error_key</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">work</span><span class="p">):</span>
+        <span class="n">work</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">work</span><span class="p">)</span>  <span class="c1"># in case initial input is important</span>
+
+        <span class="c1"># represents where each piece of work is in the process</span>
+        <span class="c1"># first list being not done yet, last list being finished</span>
+        <span class="n">work_queues</span> <span class="o">=</span> <span class="p">[</span><span class="n">work</span><span class="p">]</span> <span class="o">+</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="p">]</span>
+        <span class="n">work_queues</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">Trickle</span><span class="p">,</span> <span class="n">work_queues</span><span class="p">)</span>
+        <span class="n">work_queues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">nomore</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># no more input in Tricker 0</span>
+
+        <span class="c1"># print &quot;Before: {}&quot;.format(work_queues)</span>
+
+        <span class="c1"># prepares all workers in stream by putting on separate threads</span>
+        <span class="n">tapestry</span> <span class="o">=</span> <span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="s2">&quot;target&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">work_queues</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">work_queues</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+        <span class="p">})</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workers</span><span class="p">))]</span>  <span class="c1"># prepare worker threads</span>
+
+        <span class="c1"># start worker threads</span>
+        <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tapestry</span><span class="p">]</span>  <span class="c1"># start worker threads</span>
+
+        <span class="c1"># return a reference to a Trickler of finished items</span>
+        <span class="k">return</span> <span class="n">work_queues</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+        <span class="c1"># [t.join() for t in tapestry]  # wait for all threads to finish</span>
+
+        <span class="c1"># print &quot;After: {}&quot;.format(work_queues)</span>
+
+        <span class="c1"># return work_queues[-1].work  # todo: yield as results trickle in</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># def wait(d):</span>
+    <span class="c1">#     val = d[&quot;value&quot;]</span>
+    <span class="c1">#     if val &gt; 5:</span>
+    <span class="c1">#         raise Exception(&quot;TOO LONG&quot;)</span>
+    <span class="c1">#     time.sleep(val)</span>
+    <span class="c1">#     return d</span>
+
+    <span class="c1"># def recip(d):</span>
+    <span class="c1">#     return 1.0 / d</span>
+
+    <span class="c1"># def tee(d):</span>
+    <span class="c1">#     time.sleep(d)</span>
+    <span class="c1">#     return d</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Example</span>
+    <span class="c1">#</span>
+    <span class="c1"># import logging</span>
+    <span class="c1"># lg = logging.getLogger(__name__)</span>
+    <span class="c1"># lg.addHandler(logging.StreamHandler())</span>
+
+    <span class="c1"># mystream = Stream(logger=lg).then([</span>
+    <span class="c1">#     recip,</span>
+    <span class="c1">#     lambda x: x ** 2</span>
+    <span class="c1"># ])</span>
+
+    <span class="c1"># for w in mystream._workers:</span>
+    <span class="c1">#     print w.__name__</span>
+
+    <span class="c1"># results = mystream([1, 2])</span>
+    <span class="c1"># results.extend(mystream([1, 0]))</span>
+    <span class="c1"># for i in results:</span>
+    <span class="c1">#     print &quot;Done:&quot;, i</span>
+
+    <span class="c1"># print</span>
+    <span class="c1"># print &quot;Errors&quot;</span>
+    <span class="c1"># for e in sorted(mystream.errors.items()):</span>
+    <span class="c1">#     print e</span>
+
+    <span class="c1"># print &quot;This stream does {}preserve order.&quot;.format(</span>
+    <span class="c1">#     &quot;&quot; if mystream.preserves_order else &quot;NOT &quot;</span>
+    <span class="c1"># )</span>
+
+    <span class="kn">from</span> <span class="nn">doctest</span> <span class="k">import</span> <span class="n">testmod</span>
+    <span class="n">testmod</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

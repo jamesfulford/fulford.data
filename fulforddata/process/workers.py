@@ -95,10 +95,13 @@ class Worker(object):
 class ThreadWorker(Worker):
     """
     Preserves order. If one request takes too long, the worker will start on
-        later work but will hold up the stream until the slow request finishes.
+    later work but will hold up the stream until the slow request finishes.
     """
     PRESERVES_ORDER = True
     INSTANCES = 6
+
+    def __init__(self, *args, **kwargs):
+        super(ThreadWorker, self).__init__(*args, **kwargs)
 
     def process(self, work_list, output_list):
 
@@ -125,6 +128,9 @@ class IOWorker(Worker):
     PRESERVES_ORDER = False
     INSTANCES = 12
 
+    def __init__(self, *args, **kwargs):
+        super(IOWorker, self).__init__(*args, **kwargs)
+
     def process(self, work_list, output_list):
         pool = ThreadPool(self.instances)
         pool.map(self.push_to(output_list), work_list)
@@ -135,6 +141,9 @@ class IOWorker(Worker):
 class ProcessWorker(Worker):
     PRESERVES_ORDER = False
     INSTANCES = 4
+
+    def __init__(self, *args, **kwargs):
+        super(ProcessWorker, self).__init__(*args, **kwargs)
 
     def process(self, work_list, output_list):
         """
